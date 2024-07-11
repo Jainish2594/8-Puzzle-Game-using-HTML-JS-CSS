@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Puzzle Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #111; /* Black background */
+            color: #00ff00; /* Green text color */
+            font-family: 'Arial', sans-serif;
+        }
+
+        .puzzle-container {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px; /* Adjust the margin as needed */
+        }
+
+        .puzzle {
+            border: 2px solid #00ff00; /* Green border */
+            padding: 10px; /* Adjust the padding as needed */
+            margin: 10px; /* Adjust the margin as needed */
+            background-color: #333; /* Darker green background */
+        }
+
+        .box-container {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 5px;
+        }
+
+        .box {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #00ff00; /* Green border */
+            font-size: 1.5em;
+            cursor: pointer;
+            background-color: #444; /* Darker green background */
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <label for="username">Username: </label>
+        <span id="username-display"></span>
+        <button onclick="changeUsername()">Change Username</button>
+    </div>
+    <div class="puzzle-container">
+        <div class="puzzle">
+            <h2>Unsolved Puzzle</h2>
+            <div class="box-container" id="puzzle-container"></div>
+        </div>
+        <div class="puzzle">
+            <h2>Solved Puzzle</h2>
+            <div class="box-container" id="solved-puzzle-container"></div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", init);
+
+        const gridSize = 3;
+        const totalBoxes = gridSize * gridSize;
+        let currentPattern = [];
+        let expectedPattern = [];
+        let username;
+
+        function init() {
+            setUsername(); // Prompt for username every time window is opened
+            createPuzzle();
+            createSolvedPuzzle();
+        }
+
+        function createPuzzle() {
+            const puzzleContainer = document.getElementById("puzzle-container");
+
+            // Generate random pattern
+            currentPattern = generateRandomPattern();
+
+            for (let i = 0; i < totalBoxes; i++) {
+                const box = document.createElement("div");
+                box.className = "box";
+                box.textContent = currentPattern[i];
+                box.draggable = true;
+                box.addEventListener("dragstart", (event) => dragStart(event, i));
+                box.addEventListener("dragover", dragOver);
+                box.addEventListener("drop", (event) => drop(event, i));
+                puzzleContainer.appendChild(box);
+            }
+        }
+
+        function createSolvedPuzzle() {
+            const solvedPuzzleContainer = document.getElementById("solved-puzzle-container");
+
+            // Generate and store a fixed shuffled pattern for the solved puzzle
+            expectedPattern = generateRandomPattern();
+
+            for (let i = 0; i < totalBoxes; i++) {
+                const box = document.createElement("div");
+                box.className = "box";
+                box.textContent = expectedPattern[i];
+                solvedPuzzleContainer.appendChild(box);
+            }
+        }
+
+        function generateRandomPattern() {
+            let pattern = Array.from({ length: totalBoxes }, (_, index) => index);
+            pattern.sort(() => Math.random() - 0.5);
+            return pattern;
+        }
+
+        function dragStart(event, index) {
+            event.dataTransfer.setData("text/plain", index);
+        }
+
+        function dragOver(event) {
+            event.preventDefault();
+        }
+
+        function drop(event, index) {
+            event.preventDefault();
+            const draggedIndex = event.dataTransfer.getData("text/plain");
+            moveBox(parseInt(draggedIndex), index);
+        }
+
+        function moveBox(sourceIndex, targetIndex) {
+            const emptyIndex = currentPattern.indexOf(0);
+            const emptyRow = Math.floor(emptyIndex / gridSize);
+            const emptyCol = emptyIndex % gridSize;
+            const clickedRow = Math.floor(targetIndex / gridSize);
+            const clickedCol = targetIndex % gridSize;
+
+            if (
+                (Math.abs(emptyRow - clickedRow) === 1 && emptyCol === clickedCol) ||
+                (Math.abs(emptyCol - clickedCol) === 1 && emptyRow === clickedRow)
+            ) {
+                // Valid move, swap the values
+                [currentPattern[targetIndex], currentPattern[emptyIndex]] = [currentPattern[emptyIndex], currentPattern[targetIndex]];
+                updatePuzzle();
+                checkWin();
+            }
+        }
+
+        function updatePuzzle() {
+            const puzzleContainer = document.getElementById("puzzle-container");
+
+            puzzleContainer.innerHTML = ""; // Clear the unsolved puzzle container
+
+            for (let i = 0; i < totalBoxes; i++) {
+                const box = document.createElement("div");
+                box.className = "box";
+                box.textContent = currentPattern[i];
+                box.draggable = true;
+                box.addEventListener("dragstart", (event) => dragStart(event, i));
+                box.addEventListener("dragover", dragOver);
+                box.addEventListener("drop", (event) => drop(event, i));
+                puzzleContainer.appendChild(box);
+            }
+        }
+
+        function checkWin() {
+            if (JSON.stringify(currentPattern) === JSON.stringify(expectedPattern)) {
+                alert("Congratulations! You won!");
+            }
+        }
+
+        function changeUsername() {
+            const newUsername = prompt(`Enter your new username (current username: ${username}):`);
+            if (newUsername !== null) {
+                username = newUsername;
+                localStorage.setItem("username", username);
+                displayUsername();
+            }
+        }
+
+        function displayUsername() {
+            const usernameDisplay = document.getElementById("username-display");
+            if (username) {
+                usernameDisplay.textContent = `Hello, ${username}!`;
+            }
+        }
+
+        function setUsername() {
+            username = prompt("Enter your username:");
+            localStorage.setItem("username", username);
+            displayUsername();
+        }
+
+        displayUsername(); // Call displayUsername on initialization
+    </script>
+</body>
+</html>
